@@ -1,0 +1,43 @@
+# Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'trading-system'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files
+rule_files:
+  - 'alerts/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Trading System API
+  - job_name: 'trading-api'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+    metrics_path: '/metrics'
+
+  # TimescaleDB Exporter (if configured)
+  - job_name: 'timescaledb'
+    static_configs:
+      - targets: ['timescaledb:9187']
+
+  # Redis Exporter (if configured)
+  - job_name: 'redis-cache'
+    static_configs:
+      - targets: ['redis-cache:9121']
+
+  - job_name: 'redis-streams'
+    static_configs:
+      - targets: ['redis-streams:9121']
