@@ -1,0 +1,355 @@
+trading-system/
+│
+├── 📦 src/
+│   ├── 🐍 python/                          # 70% del código - Lógica de negocio
+│   │   ├── domain/                         # ← Core: Entities puras sin dependencias externas
+│   │   │   ├── entities/
+│   │   │   │   ├── order.py               # Order, OrderStatus, OrderType
+│   │   │   │   ├── position.py            # Position, PositionSide
+│   │   │   │   ├── trade.py               # Trade, Fill
+│   │   │   │   ├── candle.py              # OHLCV data
+│   │   │   │   ├── portfolio.py           # Portfolio, Balance
+│   │   │   │   └── market_data.py         # Tick, OrderBook, Quote
+│   │   │   ├── value_objects/
+│   │   │   │   ├── symbol.py              # Symbol (BTC/USDT), Exchange
+│   │   │   │   ├── price.py               # Price, PriceLevel
+│   │   │   │   ├── quantity.py            # Quantity, Volume
+│   │   │   │   ├── money.py               # Money, Currency
+│   │   │   │   └── timeframe.py           # Timeframe (1m, 5m, 1h)
+│   │   │   ├── enums/
+│   │   │   │   ├── order_side.py          # BUY, SELL
+│   │   │   │   ├── order_type.py          # MARKET, LIMIT, STOP_LOSS
+│   │   │   │   └── exchange_type.py       # BINANCE, BYBIT, etc.
+│   │   │   └── exceptions/
+│   │   │       ├── domain_exceptions.py    # InvalidOrderError, InsufficientFundsError
+│   │   │       └── validation_errors.py    # ValidationError
+│   │   │
+│   │   ├── application/                    # ← Use Cases: Orquestación de domain logic
+│   │   │   ├── use_cases/
+│   │   │   │   ├── place_order.py         # PlaceOrderUseCase
+│   │   │   │   ├── cancel_order.py        # CancelOrderUseCase
+│   │   │   │   ├── get_portfolio.py       # GetPortfolioUseCase
+│   │   │   │   ├── calculate_position.py  # CalculatePositionUseCase
+│   │   │   │   └── update_prices.py       # UpdatePricesUseCase
+│   │   │   ├── ports/                      # ← Interfaces (Dependency Inversion)
+│   │   │   │   ├── repositories/
+│   │   │   │   │   ├── order_repository.py
+│   │   │   │   │   ├── position_repository.py
+│   │   │   │   │   └── candle_repository.py
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── exchange_service.py    # Abstract exchange
+│   │   │   │   │   ├── market_data_service.py # Abstract market data
+│   │   │   │   │   └── notification_service.py
+│   │   │   │   └── event_bus/
+│   │   │   │       └── event_publisher.py
+│   │   │   └── dto/
+│   │   │       ├── order_dto.py           # Data Transfer Objects
+│   │   │       └── portfolio_dto.py
+│   │   │
+│   │   ├── strategies/                     # ← Estrategias de Trading
+│   │   │   ├── base/
+│   │   │   │   ├── strategy.py            # Abstract Strategy (Template Method)
+│   │   │   │   ├── signal.py              # Signal (BUY, SELL, HOLD)
+│   │   │   │   └── strategy_config.py     # BaseConfig
+│   │   │   ├── momentum/
+│   │   │   │   ├── rsi_strategy.py        # RSI + MACD
+│   │   │   │   ├── macd_crossover.py
+│   │   │   │   └── momentum_config.py
+│   │   │   ├── mean_reversion/
+│   │   │   │   ├── bollinger_bands.py
+│   │   │   │   ├── zscore_strategy.py
+│   │   │   │   └── mean_reversion_config.py
+│   │   │   ├── arbitrage/
+│   │   │   │   ├── triangular_arb.py      # BTC→ETH→USDT→BTC
+│   │   │   │   ├── cross_exchange_arb.py  # Binance vs Bybit
+│   │   │   │   └── arbitrage_config.py
+│   │   │   ├── market_making/
+│   │   │   │   ├── simple_mm.py           # Bid/Ask spread capture
+│   │   │   │   └── mm_config.py
+│   │   │   └── grid_trading/
+│   │   │       ├── grid_strategy.py       # Grid con DCA
+│   │   │       └── grid_config.py
+│   │   │
+│   │   ├── risk_management/                # ← Sistema de Gestión de Riesgo
+│   │   │   ├── risk_engine.py             # RiskEngine (orchestrator)
+│   │   │   ├── pre_trade/
+│   │   │   │   ├── position_limit_check.py
+│   │   │   │   ├── exposure_check.py
+│   │   │   │   ├── correlation_check.py
+│   │   │   │   └── capital_check.py
+│   │   │   ├── in_trade/
+│   │   │   │   ├── stop_loss_manager.py
+│   │   │   │   ├── trailing_stop.py
+│   │   │   │   └── time_exit.py
+│   │   │   ├── portfolio/
+│   │   │   │   ├── var_calculator.py      # Value at Risk
+│   │   │   │   ├── sharpe_monitor.py
+│   │   │   │   └── drawdown_monitor.py
+│   │   │   └── circuit_breakers/
+│   │   │       ├── daily_loss_breaker.py
+│   │   │       ├── volatility_breaker.py
+│   │   │       └── latency_breaker.py
+│   │   │
+│   │   ├── backtesting/                    # ← Motor de Backtesting
+│   │   │   ├── backtest_engine.py         # Main engine
+│   │   │   ├── event_loop.py              # Simulation loop
+│   │   │   ├── data_handler.py            # Historical data loader
+│   │   │   ├── simulated_execution.py     # Simula slippage/fees
+│   │   │   ├── metrics/
+│   │   │   │   ├── performance_metrics.py # Sharpe, Sortino, Calmar
+│   │   │   │   ├── trade_metrics.py       # Win rate, profit factor
+│   │   │   │   └── risk_metrics.py        # Max DD, VaR
+│   │   │   ├── optimization/
+│   │   │   │   ├── walk_forward.py        # Walk-forward optimization
+│   │   │   │   ├── monte_carlo.py         # Monte Carlo simulation
+│   │   │   │   └── genetic_algo.py        # Parameter optimization
+│   │   │   └── reports/
+│   │   │       ├── html_report.py
+│   │   │       └── pdf_report.py
+│   │   │
+│   │   ├── market_data/                    # ← Ingesta de Datos de Mercado
+│   │   │   ├── feed_manager.py            # Orchestrates múltiples feeds
+│   │   │   ├── feeds/
+│   │   │   │   ├── binance_feed.py        # Binance WebSocket
+│   │   │   │   ├── bybit_feed.py
+│   │   │   │   └── ccxt_feed.py           # Generic CCXT wrapper
+│   │   │   ├── normalizer.py              # Normaliza entre exchanges
+│   │   │   ├── aggregator.py              # Aggregated order book
+│   │   │   ├── gap_detector.py            # Detecta gaps en datos
+│   │   │   └── replay_engine.py           # Replay histórico
+│   │   │
+│   │   ├── execution/                      # ← Ejecución de Órdenes
+│   │   │   ├── order_manager.py           # Orchestrator principal
+│   │   │   ├── order_router.py            # Smart order routing
+│   │   │   ├── executors/
+│   │   │   │   ├── market_executor.py
+│   │   │   │   ├── limit_executor.py
+│   │   │   │   └── twap_executor.py       # Time-weighted avg price
+│   │   │   ├── validators/
+│   │   │   │   ├── order_validator.py
+│   │   │   │   └── risk_validator.py
+│   │   │   ├── retry_handler.py           # Exponential backoff
+│   │   │   ├── rate_limiter.py            # Token bucket algorithm
+│   │   │   └── fill_tracker.py            # Tracking de fills
+│   │   │
+│   │   ├── portfolio/                      # ← Gestión de Portfolio
+│   │   │   ├── portfolio_manager.py
+│   │   │   ├── position_tracker.py
+│   │   │   ├── pnl_calculator.py          # Realized/Unrealized PnL
+│   │   │   ├── rebalancer.py              # Portfolio rebalancing
+│   │   │   └── performance_tracker.py
+│   │   │
+│   │   ├── alerting/                       # ← Sistema de Alertas
+│   │   │   ├── alert_manager.py
+│   │   │   ├── channels/
+│   │   │   │   ├── telegram_channel.py
+│   │   │   │   ├── discord_channel.py
+│   │   │   │   ├── email_channel.py
+│   │   │   │   └── sms_channel.py
+│   │   │   ├── rules/
+│   │   │   │   ├── threshold_rule.py      # Alert si X > threshold
+│   │   │   │   └── anomaly_rule.py        # ML-based anomaly
+│   │   │   └── escalation.py              # Auto-escalation
+│   │   │
+│   │   ├── api/                            # ← REST API & WebSocket
+│   │   │   ├── main.py                    # FastAPI app
+│   │   │   ├── routes/
+│   │   │   │   ├── orders.py              # /api/v1/orders
+│   │   │   │   ├── positions.py           # /api/v1/positions
+│   │   │   │   ├── strategies.py          # /api/v1/strategies
+│   │   │   │   ├── portfolio.py           # /api/v1/portfolio
+│   │   │   │   └── health.py              # /api/v1/health
+│   │   │   ├── websockets/
+│   │   │   │   ├── market_data_ws.py      # WS para market data
+│   │   │   │   └── portfolio_ws.py        # WS para portfolio updates
+│   │   │   ├── middleware/
+│   │   │   │   ├── auth_middleware.py
+│   │   │   │   ├── rate_limit_middleware.py
+│   │   │   │   └── logging_middleware.py
+│   │   │   └── schemas/
+│   │   │       ├── order_schema.py        # Pydantic models
+│   │   │       └── response_schema.py
+│   │   │
+│   │   └── infrastructure/                 # ← Detalles de Implementación
+│   │       ├── config/
+│   │       │   ├── settings.py            # Pydantic Settings
+│   │       │   ├── exchanges.yaml         # Exchange configs
+│   │       │   ├── strategies.yaml        # Strategy configs
+│   │       │   └── risk.yaml              # Risk parameters
+│   │       ├── database/
+│   │       │   ├── connection.py          # SQLAlchemy setup
+│   │       │   ├── models/
+│   │       │   │   ├── order_model.py     # ORM models
+│   │       │   │   ├── trade_model.py
+│   │       │   │   └── candle_model.py
+│   │       │   └── repositories/          # Concrete implementations
+│   │       │       ├── order_repo_impl.py
+│   │       │       └── candle_repo_impl.py
+│   │       ├── exchanges/
+│   │       │   ├── ccxt_adapter.py        # CCXT adapter
+│   │       │   ├── binance_adapter.py     # Native Binance
+│   │       │   └── exchange_factory.py    # Factory pattern
+│   │       ├── messaging/
+│   │       │   ├── redis_publisher.py     # Redis Streams
+│   │       │   ├── redis_subscriber.py
+│   │       │   └── message_types.py       # Message schemas
+│   │       ├── cache/
+│   │       │   ├── redis_cache.py
+│   │       │   └── cache_decorator.py
+│   │       ├── logging/
+│   │       │   ├── logger_config.py
+│   │       │   ├── structured_logger.py   # JSON logging
+│   │       │   └── audit_logger.py
+│   │       └── security/
+│   │           ├── credentials_manager.py # Secrets management
+│   │           ├── encryption.py
+│   │           └── api_key_validator.py
+│   │
+│   └── ⚡ cpp/                             # 30% del código - Performance crítico
+│       ├── execution/                      # ← Order Execution Engine
+│       │   ├── engine.cpp                 # Main execution engine
+│       │   ├── engine.hpp
+│       │   ├── order_queue.cpp            # Lock-free queue
+│       │   ├── order_queue.hpp
+│       │   ├── latency_tracker.cpp        # <1ms tracking
+│       │   └── CMakeLists.txt
+│       ├── market_data/                    # ← Market Data Parser
+│       │   ├── parser.cpp                 # JSON parsing optimizado
+│       │   ├── parser.hpp
+│       │   ├── orderbook.cpp              # Orderbook reconstruction
+│       │   ├── orderbook.hpp
+│       │   ├── circular_buffer.cpp        # Efficient buffering
+│       │   └── CMakeLists.txt
+│       ├── indicators/                     # ← Indicadores Técnicos
+│       │   ├── rsi.cpp                    # RSI optimizado
+│       │   ├── macd.cpp
+│       │   ├── bollinger.cpp
+│       │   ├── ema.cpp                    # EMA con SIMD
+│       │   └── CMakeLists.txt
+│       ├── bindings/                       # ← Python Bindings (pybind11)
+│       │   ├── execution_bindings.cpp
+│       │   ├── market_data_bindings.cpp
+│       │   ├── indicators_bindings.cpp
+│       │   └── CMakeLists.txt
+│       ├── utils/
+│       │   ├── timestamp.cpp              # High-resolution timestamps
+│       │   ├── memory_pool.cpp            # Custom allocator
+│       │   └── simd_utils.cpp             # SIMD helpers
+│       └── CMakeLists.txt                 # Root CMake
+│
+├── 🧪 tests/
+│   ├── unit/                               # Unit tests (pytest)
+│   │   ├── test_domain/
+│   │   │   ├── test_order.py
+│   │   │   └── test_position.py
+│   │   ├── test_strategies/
+│   │   │   ├── test_rsi_strategy.py
+│   │   │   └── test_bollinger_strategy.py
+│   │   └── test_risk/
+│   │       └── test_risk_engine.py
+│   ├── integration/                        # Integration tests
+│   │   ├── test_order_flow.py             # Market data → Order
+│   │   ├── test_backtest_engine.py
+│   │   └── test_api_endpoints.py
+│   ├── e2e/                                # End-to-end tests
+│   │   └── test_full_trading_cycle.py
+│   ├── chaos/                              # Chaos engineering
+│   │   ├── test_network_failure.py
+│   │   └── test_exchange_downtime.py
+│   ├── performance/                        # Load tests
+│   │   ├── test_market_data_throughput.py
+│   │   └── test_concurrent_strategies.py
+│   └── fixtures/
+│       ├── market_data_fixtures.py
+│       └── order_fixtures.py
+│
+├── 📊 data/
+│   ├── historical/                         # Datos históricos
+│   │   ├── binance/
+│   │   │   ├── BTCUSDT_1m_2024.csv
+│   │   │   └── ETHUSDT_1m_2024.csv
+│   │   └── bybit/
+│   ├── backtests/                          # Resultados de backtests
+│   │   └── rsi_strategy_2024_01_15.json
+│   └── cache/                              # Cache temporal
+│
+├── 🐳 docker/
+│   ├── Dockerfile.python                   # Multi-stage Python
+│   ├── Dockerfile.cpp                      # C++ builder
+│   ├── docker-compose.yml                  # Todos los servicios
+│   ├── docker-compose.dev.yml              # Dev environment
+│   └── docker-compose.prod.yml             # Production
+│
+├── 📜 scripts/
+│   ├── start.sh                            # Inicia el sistema
+│   ├── stop.sh                             # Para el sistema (graceful)
+│   ├── health_check.sh                     # Health check
+│   ├── backup.sh                           # Backup de DB + config
+│   ├── restore.sh                          # Restore
+│   ├── migrate_db.sh                       # DB migrations
+│   ├── download_data.sh                    # Descarga datos históricos
+│   └── run_backtest.sh                     # Ejecuta backtest
+│
+├── 🔧 config/
+│   ├── development.yaml                    # Dev config
+│   ├── staging.yaml                        # Staging config
+│   ├── production.yaml                     # Prod config
+│   ├── exchanges/
+│   │   ├── binance.yaml
+│   │   └── bybit.yaml
+│   ├── strategies/
+│   │   ├── rsi_strategy.yaml
+│   │   └── grid_strategy.yaml
+│   └── logging.yaml                        # Logging config
+│
+├── 📊 monitoring/
+│   ├── grafana/
+│   │   ├── dashboards/
+│   │   │   ├── system_health.json
+│   │   │   ├── trading_metrics.json
+│   │   │   └── risk_metrics.json
+│   │   └── provisioning/
+│   ├── prometheus/
+│   │   ├── prometheus.yml
+│   │   └── alerts.yml
+│   └── alertmanager/
+│       └── config.yml
+│
+├── 📚 docs/
+│   ├── architecture/
+│   │   ├── system_overview.md
+│   │   ├── data_flow.md
+│   │   └── decision_records/              # ADRs
+│   ├── api/
+│   │   └── api_documentation.md
+│   ├── strategies/
+│   │   ├── rsi_strategy.md
+│   │   └── how_to_create_strategy.md
+│   ├── deployment/
+│   │   ├── deployment_guide.md
+│   │   └── infrastructure_setup.md
+│   └── runbooks/
+│       ├── incident_response.md
+│       ├── monitoring_guide.md
+│       └── troubleshooting.md
+│
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                          # CI pipeline
+│       ├── cd.yml                          # CD pipeline
+│       └── tests.yml                       # Test runner
+│
+├── 📄 Root Files
+├── README.md                               # Epic README
+├── CONTRIBUTING.md                         # Contribution guide
+├── DEPLOYMENT.md                           # Deployment guide
+├── LICENSE                                 # MIT License
+├── .gitignore
+├── .env.example                            # Environment variables template
+├── requirements.txt                        # Python dependencies
+├── requirements-dev.txt                    # Dev dependencies
+├── pyproject.toml                          # Python project config
+├── setup.py                                # Package setup
+├── CMakeLists.txt                          # Root CMake (C++)
+├── Makefile                                # Common commands
+└── VERSION                                 # Version file

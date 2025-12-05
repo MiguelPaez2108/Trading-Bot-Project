@@ -1,0 +1,525 @@
+Eres un arquitecto de software senior especializado en sistemas de trading de alta frecuencia con 15+ años de experiencia en fondos cuantitativos. Tu tarea es diseñar e implementar un sistema de trading algorítmico de nivel institucional.
+
+---
+
+## 🎭 CONTEXTO Y ROL
+
+**Rol**: Actúa como un Lead Architect de un hedge fund cuantitativo que ha construido sistemas que manejan millones en volumen diario.
+
+**Objetivo**: Crear un sistema de trading completo, robusto, escalable y production-ready que pueda:
+- Operar 24/7 con uptime del 99.9%
+- Ejecutar múltiples estrategias simultáneamente
+- Manejar datos de mercado en tiempo real con latencia <100ms
+- Soportar backtesting riguroso con datos históricos
+- Escalar desde 1 a 100+ instrumentos
+- Generar retornos consistentes con riesgo controlado
+
+---
+
+## 📐 PARTE 1: ARQUITECTURA SCREAMING ARCHITECTURE
+
+### Requisitos Arquitectónicos:
+
+1. **Principios de Clean Architecture**:
+   - Capas independientes: Domain → Application → Infrastructure → Presentation
+   - Inversión de dependencias estricta
+   - Entities que representen conceptos de trading puros
+   - Use cases explícitos para cada operación
+
+2. **Estructura de Carpetas** que debe "gritar" su propósito:
+```
+trading-system/
+├── 📊 domain/              # Lógica de negocio pura
+│   ├── entities/
+│   ├── value-objects/
+│   └── domain-services/
+├── 🎯 strategies/          # Estrategias de trading
+├── 📈 market-data/         # Ingesta de datos
+├── 💰 execution/           # Ejecución de órdenes
+├── 🛡️ risk-management/    # Gestión de riesgo
+├── 📉 backtesting/         # Motor de backtesting
+├── 📊 portfolio/           # Gestión de portafolio
+├── 🔔 alerting/           # Sistema de alertas
+└── 🎛️ infrastructure/     # Detalles técnicos
+```
+
+Proporciona la estructura COMPLETA con al menos 3 niveles de profundidad explicando cada carpeta.
+
+---
+
+## 🛠️ PARTE 2: STACK TECNOLÓGICO ÓPTIMO
+
+### Análisis Comparativo Requerido:
+
+Para cada categoría, proporciona:
+1. Tu recomendación principal
+2. 2-3 alternativas viables
+3. Justificación técnica (performance, ecosistema, latencia, etc.)
+4. Trade-offs específicos
+
+### Categorías a Analizar:
+
+#### A) Lenguaje Principal - ARQUITECTURA HÍBRIDA OBLIGATORIA
+
+**DECISIÓN ARQUITECTÓNICA FIJA: Python + C++**
+
+Esta es una decisión NO negociable por las siguientes razones:
+
+**Python para**:
+- 🎯 Estrategias y lógica de negocio (rapidez de desarrollo)
+- 📊 Análisis de datos y backtesting (pandas, numpy, TA-Lib)
+- 🔧 Configuración, orchestration y scripts
+- 📈 Investigación y optimización de estrategias
+- 🎛️ APIs y dashboards (FastAPI)
+
+**C++ para**:
+- ⚡ Order execution engine (latencia <1ms)
+- 📡 Market data parsing y normalización (procesamiento de millones de ticks)
+- 🔢 Cálculos matemáticos intensivos (indicadores técnicos en tiempo real)
+- 💾 Buffers circulares y memory pools
+- 🚀 Hot path crítico donde cada microsegundo cuenta
+
+**Integración Python-C++**:
+- **pybind11** como binding principal (moderno, rápido, type-safe)
+- Alternativa: **Cython** para código Python que necesita aceleración
+- **nanobind** para casos ultra-optimizados
+- Comunicación por shared memory para latencia mínima
+
+**Estructura requerida**:
+```
+├── src/
+│   ├── python/          # Lógica de alto nivel
+│   │   ├── strategies/
+│   │   ├── backtesting/
+│   │   └── api/
+│   └── cpp/             # Componentes críticos de performance
+│       ├── execution/   # Order execution engine
+│       ├── market_data/ # Data parsing y processing
+│       ├── indicators/  # Indicadores técnicos optimizados
+│       └── bindings/    # pybind11 wrappers
+```
+
+**Justificación técnica**:
+- Python: Ecosistema rico (pandas, numpy, scikit-learn, ccxt)
+- C++: Control total sobre memoria, SIMD, lock-free structures
+- Combinados: Developer velocity + performance donde importa
+- Usado por: Jane Street, Citadel, Two Sigma, Renaissance
+
+#### B) Data Pipeline
+- **Stream Processing**: Kafka, Redis Streams, Pulsar, RabbitMQ
+- **Time-Series DB**: TimescaleDB, InfluxDB, QuestDB, Clickhouse
+- **Cache**: Redis, KeyDB, Dragonfly
+- **Justifica**: Throughput, latencia, persistencia
+
+#### C) Execution & APIs
+- **Framework**: FastAPI, Actix-Web, Fiber, Express
+- **WebSocket**: ws, websockets, Tungstenite
+- **Conectores**: ccxt, binance-connector, crypto-exchanges
+- **Async Runtime**: asyncio, tokio, goroutines
+
+#### D) Analytics & ML
+- **Análisis Técnico**: TA-Lib, pandas-ta, tulipy
+- **Backtesting**: Backtrader, Zipline, VectorBT, custom
+- **ML (opcional)**: scikit-learn, XGBoost, PyTorch
+- **Visualización**: Plotly, Matplotlib, TradingView webhooks
+
+#### E) Infrastructure
+- **Containerización**: Docker + Docker Compose
+- **Orquestación**: Kubernetes (solo si es necesario), Docker Swarm
+- **Monitoring**: Prometheus + Grafana, Datadog, ELK Stack
+- **CI/CD**: GitHub Actions, GitLab CI, Jenkins
+
+---
+
+## 🧩 PARTE 3: MÓDULOS CORE (IMPLEMENTACIÓN DETALLADA)
+
+Para cada módulo proporciona:
+- Diagrama de componentes
+- Interfaces principales
+- Código de ejemplo production-ready
+- Casos edge y su manejo
+- Tests unitarios ejemplo
+
+### 3.1 📊 MARKET DATA ENGINE
+
+**Funcionalidades**:
+- Múltiples feeds simultáneos (REST + WebSocket)
+- Normalización de datos entre exchanges
+- Detección y manejo de gaps en datos
+- Almacenamiento eficiente (compression)
+- Replay de datos históricos para backtesting
+
+**Requisitos técnicos**:
+```python
+# Ejemplo de interface esperada
+class MarketDataFeed(Protocol):
+    async def subscribe(self, symbols: List[str]) -> None: ...
+    async def get_orderbook(self, symbol: str, depth: int) -> OrderBook: ...
+    async def get_trades(self, symbol: str) -> AsyncIterator[Trade]: ...
+    async def get_klines(self, symbol: str, interval: str) -> List[Candle]: ...
+```
+
+### 3.2 🎯 STRATEGY ENGINE
+
+**Arquitectura**:
+- Plugin-based system para estrategias
+- Hot-reloading de estrategias sin downtime
+- Aislamiento entre estrategias (separate processes/threads)
+- State management y persistencia
+- Performance metrics por estrategia
+
+**Estrategias a incluir**:
+
+1. **Momentum Strategy** (RSI + MACD)
+2. **Mean Reversion** (Bollinger Bands + Z-Score)
+3. **Market Making** (spread capture)
+4. **Arbitrage** (cross-exchange + triangular)
+5. **Grid Trading** (configurable)
+6. **Framework genérico** para estrategias custom
+
+Cada estrategia debe incluir:
+- Parámetros optimizables
+- Condiciones de entrada/salida claras
+- Money management integrado
+- Métricas de performance
+
+### 3.3 💰 ORDER EXECUTION ENGINE
+
+**Features críticos**:
+- Smart order routing
+- Order types: Market, Limit, Stop-Loss, Take-Profit, OCO, Iceberg
+- Position tracking en tiempo real
+- Slippage calculation y analysis
+- Retry logic con exponential backoff
+- Rate limiting inteligente
+- Fill simulation para backtesting
+
+**Anti-patterns a evitar**:
+```python
+# ❌ MAL - No hacer esto
+await exchange.create_order(symbol, 'market', 'buy', amount)
+
+# ✅ BIEN - Hacer esto
+async with order_validator() as validator:
+    order = await validator.validate(
+        Order(symbol, OrderType.MARKET, Side.BUY, amount)
+    )
+    result = await executor.execute_with_retry(
+        order, 
+        max_retries=3,
+        timeout=5.0
+    )
+    await audit_log.record(result)
+```
+
+### 3.4 🛡️ RISK MANAGEMENT SYSTEM
+
+**Componentes obligatorios**:
+
+1. **Pre-Trade Risk Checks**:
+   - Max position size por símbolo
+   - Max exposure total
+   - Correlación entre posiciones
+   - Leverage limits
+   - Capital disponible
+
+2. **In-Trade Monitoring**:
+   - Stop-loss dinámico
+   - Trailing stops
+   - Drawdown máximo
+   - Time-based exits
+
+3. **Portfolio Risk**:
+   - Value at Risk (VaR)
+   - Sharpe Ratio real-time
+   - Beta vs mercado
+   - Concentration risk
+
+4. **Circuit Breakers**:
+   - Pérdida diaria máxima → STOP ALL
+   - Volatilidad extrema → REDUCE POSITIONS
+   - API failures → SWITCH TO SAFE MODE
+   - Latencia alta → PAUSE NEW ORDERS
+
+### 3.5 📉 BACKTESTING ENGINE
+
+**Requisitos**:
+- Datos tick-by-tick o por minuto
+- Comisiones realistas (maker/taker)
+- Slippage simulation
+- Market impact modeling
+- Forward testing / Walk-forward optimization
+- Monte Carlo simulations
+- Out-of-sample validation
+
+**Métricas a calcular**:
+- Total Return, CAGR, Sharpe, Sortino, Calmar
+- Max Drawdown, Average Drawdown
+- Win Rate, Profit Factor, Expectancy
+- Average Holding Time
+- Recovery Time
+- Risk-adjusted returns
+
+---
+
+## 🔐 PARTE 4: SEGURIDAD Y COMPLIANCE
+
+### 4.1 Seguridad de Credenciales
+```python
+# Implementa este patrón
+class SecureConfig:
+    @staticmethod
+    def load_credentials() -> Dict[str, Any]:
+        """Carga desde: ENV vars → Secrets Manager → Encrypted file"""
+        pass
+```
+
+### 4.2 Audit Trail
+- Toda operación debe ser auditable
+- Logs inmutables (append-only)
+- Tracking de decisiones de la estrategia
+
+### 4.3 Compliance
+- Registro de todas las órdenes
+- Razón de cada trade
+- PnL reporting
+
+---
+
+## 📊 PARTE 5: MONITORING & OBSERVABILITY
+
+### Dashboard en tiempo real debe mostrar:
+1. **System Health**:
+   - Uptime, latency promedio, memoria, CPU
+   - Connection status con exchanges
+   - Queue sizes, message throughput
+
+2. **Trading Metrics**:
+   - PnL real-time (diario, semanal, mensual, total)
+   - Open positions y exposure
+   - Win rate últimas 24h
+   - Número de trades ejecutados
+
+3. **Risk Metrics**:
+   - Drawdown actual
+   - VaR utilizado vs disponible
+   - Leverage actual
+   - Correlación de posiciones
+
+4. **Alerts**:
+   - Telegram/Discord/Email/SMS
+   - Niveles: INFO, WARNING, CRITICAL
+   - Escalación automática
+
+---
+
+## 🚀 PARTE 6: DEPLOYMENT & OPERATIONS
+
+### 6.1 Docker Setup
+Proporciona:
+- Dockerfile optimizado (multi-stage build)
+- docker-compose.yml completo con todos los servicios
+- Scripts de health checks
+- Volume management para datos persistentes
+
+### 6.2 Configuración por Ambiente
+```yaml
+# config/production.yaml ejemplo
+mode: live
+exchanges:
+  binance:
+    testnet: false
+    api_key: ${BINANCE_API_KEY}
+risk:
+  max_drawdown: 0.15
+  daily_loss_limit: 0.05
+```
+
+### 6.3 Runbooks
+- Cómo iniciar el sistema
+- Cómo detener el sistema (graceful shutdown)
+- Procedimiento de recuperación ante crashes
+- Cómo agregar una nueva estrategia
+- Cómo revisar logs ante un problema
+
+---
+
+## 🧪 PARTE 7: TESTING STRATEGY
+
+### Tests Requeridos:
+
+1. **Unit Tests** (>80% coverage):
+   - Cada estrategia aislada
+   - Risk checks
+   - Order validation
+
+2. **Integration Tests**:
+   - Market data → Strategy → Execution flow completo
+   - Mocks de exchange APIs
+
+3. **Chaos Engineering**:
+   - Simular desconexiones
+   - Simular latencia extrema
+   - Simular respuestas erróneas del exchange
+
+4. **Load Tests**:
+   - 1000+ updates/segundo de market data
+   - 100+ estrategias simultáneas
+
+---
+
+## 📦 PARTE 8: ENTREGABLES FINALES
+
+Proporciona TODO esto en tu respuesta:
+
+### 1. 📋 Executive Summary (2-3 páginas)
+- Decisiones arquitectónicas clave y por qué
+- Stack tecnológico elegido con justificación
+- Trade-offs principales
+- Estimación de capacidad del sistema
+
+### 2. 🗂️ Estructura Completa de Proyecto
+```
+trading-system/
+├── Explicación de CADA carpeta y archivo importante
+├── Convenciones de naming
+└── Dependencias entre módulos
+```
+
+### 3. 💻 Código Production-Ready
+- Al menos 10 archivos core con implementación completa
+- Comentarios inline explicando decisiones no obvias
+- Type hints/generics donde aplique
+- Manejo de errores robusto
+
+### 4. 🐳 Setup Completo
+- Dockerfile
+- docker-compose.yml
+- requirements.txt / Cargo.toml / go.mod (según lenguaje)
+- .env.example con TODAS las variables
+
+### 5. 📖 Documentación
+- README.md épico con:
+  - Quick start (5 minutos hasta ver algo funcionando)
+  - Arquitectura overview con diagramas
+  - Guía de configuración detallada
+  - API documentation
+  - Troubleshooting común
+- CONTRIBUTING.md
+- DEPLOYMENT.md
+
+### 6. 🎯 Estrategias de Ejemplo
+- Al menos 3 estrategias COMPLETAS y funcionales
+- Con parámetros pre-optimizados
+- Con resultados de backtesting
+
+### 7. 📊 Scripts Útiles
+- start.sh / stop.sh
+- backup.sh
+- health-check.sh
+- migrate-db.sh
+
+### 8. 🧪 Tests
+- Ejemplos de unit tests
+- Ejemplos de integration tests
+- Script para ejecutar toda la suite
+
+### 9. 📈 Performance Benchmarks
+- Latencia esperada en diferentes escenarios
+- Throughput de market data
+- Recursos necesarios (RAM, CPU, Disk)
+
+### 10. 🗺️ Roadmap
+- Features para V1.0, V1.5, V2.0
+- Mejoras de optimización identificadas
+- Features avanzadas opcionales
+
+---
+
+## 🎯 CRITERIOS DE ÉXITO
+
+Tu implementación será exitosa si:
+
+✅ Puedo clonar el repo y tener el sistema corriendo en <10 minutos
+✅ El sistema puede correr un backtest de 1 año en <5 minutos
+✅ Latencia desde market data hasta order placement <100ms
+✅ El sistema se recupera automáticamente de caídas de conexión
+✅ Puedo agregar una nueva estrategia en <30 minutos
+✅ Los logs me permiten debuggear cualquier problema fácilmente
+✅ El código es tan limpio que un junior puede entenderlo
+✅ El sistema puede escalar a 100+ símbolos sin cambios arquitectónicos
+
+---
+
+## 🚨 CONSTRAINTS Y CONSIDERACIONES
+
+### Hard Requirements:
+- ⚠️ NUNCA usar blocking I/O en el hot path
+- ⚠️ NUNCA hardcodear credenciales
+- ⚠️ SIEMPRE validar órdenes antes de enviar
+- ⚠️ SIEMPRE tener un kill switch accesible
+- ⚠️ NUNCA asumir que el exchange responde correctamente
+
+### Performance Targets:
+- Order placement: <50ms p99
+- Market data ingestion: 10k+ updates/s
+- Backtesting: 1 año de datos en 1-5 minutos
+- Memory: <2GB para operación normal
+
+### Reliability Targets:
+- Uptime: 99.9%+
+- Zero data loss en crashes
+- Graceful degradation si un exchange falla
+
+---
+
+## 🎨 ESTILO DE RESPUESTA ESPERADO
+
+1. **Primera Sección**: Executive summary y decisiones arquitectónicas (2-3 páginas)
+
+2. **Segunda Sección**: Stack tecnológico detallado con análisis comparativo
+
+3. **Tercera Sección**: Estructura de carpetas COMPLETA (ASCII tree visual)
+
+4. **Cuarta Sección**: Implementación de módulos core con código (10-15 archivos)
+
+5. **Quinta Sección**: Docker setup y deployment
+
+6. **Sexta Sección**: Tests y monitoring
+
+7. **Séptima Sección**: Documentación y runbooks
+
+8. **Octava Sección**: Roadmap y próximos pasos
+
+---
+
+## 💡 BONUS: Si realmente quieres brillar
+
+Incluye también:
+
+🔥 **Advanced Features**:
+- Sistema de feature flags para activar/desactivar estrategias
+- A/B testing framework para comparar estrategias
+- Optimización automática de parámetros (genetic algorithms)
+- Paper trading mode integrado
+- Portfolio rebalancing automático
+
+🔥 **ML Integration** (opcional):
+- Predicción de volatilidad
+- Clasificación de regímenes de mercado
+- Reinforcement learning para optimización
+
+🔥 **Multi-Exchange**:
+- Aggregated order book
+- Smart order routing
+- Arbitrage detection automático
+
+---
+
+**NOTA FINAL**: Este no es un proyecto de fin de semana. Es un sistema production-grade que requiere atención al detalle. Prioriza CONFIABILIDAD sobre features fancy. Un sistema simple que funciona 24/7 vale más que uno complejo que crashea.
+
+**Recordatorio**: El código debe ser tan bueno que lo usarías con tu propio dinero. Porque eventualmente, lo harás. 💰
+
+---
+
+Ahora, por favor proporciona la implementación completa siguiendo esta especificación.
