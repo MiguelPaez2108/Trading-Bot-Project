@@ -465,7 +465,7 @@ strategy:
 
 ---
 
-## 🛡️ Risk Management
+##  Risk Management
 
 ### Arquitectura del Sistema de Riesgo
 
@@ -527,7 +527,7 @@ risk_management:
 
 ---
 
-## 🐳 Deployment
+##  Deployment
 
 ### Docker Compose Setup
 
@@ -644,7 +644,7 @@ GRAFANA_PASSWORD=admin
 
 ---
 
-## 📊 Monitoring
+##  Monitoring
 
 ### Dashboard en Tiempo Real
 
@@ -697,20 +697,20 @@ alerts:
 
 ---
 
-## 🗺️ Roadmap
+##  Roadmap
 
 Ver [ROADMAP.md](ROADMAP.md) para el plan detallado.
 
 **Resumen:**
-- ✅ **v0.1** - Estructura y documentación
-- 🔄 **v0.2** - Core domain + Market data
-- 📅 **v0.3** - Estrategias básicas + Backtesting
-- 📅 **v0.4** - Risk management + Execution
-- 📅 **v1.0** - Production-ready system
+-  **v0.1** - Estructura y documentación
+-  **v0.2** - Core domain + Market data
+-  **v0.3** - Estrategias básicas + Backtesting
+-  **v0.4** - Risk management + Execution
+-  **v1.0** - Production-ready system
 
 ---
 
-## 🤝 Contribuir
+## Contribuir
 
 Ver [CONTRIBUTING.md](CONTRIBUTING.md) para guías de contribución.
 
@@ -734,25 +734,10 @@ cd build && cmake .. && make
 
 ---
 
-## 📄 Licencia
+##  Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT - ver [LICENSE](LICENSE) para detalles.
 
 ---
 
-## 🙏 Agradecimientos
-
-- Inspirado por sistemas de trading de fondos cuantitativos institucionales
-- Built with ❤️ usando Python, C++, y café ☕
-
----
-
-## 📞 Soporte
-
-- 📧 Email: support@tradingsystem.com
-- 💬 Discord: [Trading System Community](https://discord.gg/tradingsystem)
-- 📖 Docs: [docs.tradingsystem.com](https://docs.tradingsystem.com)
-
----
-
-**⚠️ Disclaimer**: Este software es solo para fines educativos. El trading algorítmico conlleva riesgos significativos. Nunca opere con dinero que no pueda permitirse perder. Los resultados pasados no garantizan rendimientos futuros.
+**Disclaimer**: Este software es solo para fines educativos. El trading algorítmico conlleva riesgos significativos. Nunca opere con dinero que no pueda permitirse perder. Los resultados pasados no garantizan rendimientos futuros.
