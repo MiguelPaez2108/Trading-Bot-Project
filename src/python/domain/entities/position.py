@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from src.python.domain.value_objects.symbol import TradingPair
@@ -56,9 +56,9 @@ class Position:
     status: PositionStatus = PositionStatus.OPEN
     
     # Timestamps
-    opened_at: datetime = field(default_factory=datetime.utcnow)
+    opened_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     closed_at: Optional[datetime] = None
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     def __post_init__(self):
         """Validate position on creation."""
@@ -71,10 +71,10 @@ class Position:
         if self.entry_price is None or self.entry_price <= 0:
             raise ValueError("Entry price must be positive")
         
-        # Ensure Decimal types only for non-Decimal inputs
-        if self.size is not None and not isinstance(self.size, Decimal):
+        # Ensure Decimal types only for non-Decimal inputs (runtime safety)
+        if self.size is not None and not isinstance(self.size, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'size', Decimal(str(self.size)))
-        if self.entry_price is not None and not isinstance(self.entry_price, Decimal):
+        if self.entry_price is not None and not isinstance(self.entry_price, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'entry_price', Decimal(str(self.entry_price)))
         
         # Set current price to entry if not provided
@@ -90,7 +90,7 @@ class Position:
         """
         self.current_price = new_price
         self.unrealized_pnl = self.calculate_pnl(new_price)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
     
     def calculate_pnl(self, price: Decimal) -> Decimal:
         """
@@ -104,10 +104,10 @@ class Position:
         """
         if self.side == PositionSide.LONG:
             # Long: profit when price goes up
-            pnl = (price - self.entry_price) * self.size
+            pnl = (price - self.entry_price) * self.size  # type: ignore[operator]
         else:
             # Short: profit when price goes down
-            pnl = (self.entry_price - price) * self.size
+            pnl = (self.entry_price - price) * self.size  # type: ignore[operator]
         
         return pnl
     
@@ -125,7 +125,7 @@ class Position:
             price = self.current_price
         
         pnl = self.calculate_pnl(price)
-        invested = self.entry_price * self.size
+        invested = self.entry_price * self.size  # type: ignore[operator]
         
         return (pnl / invested) * Decimal('100')
     
@@ -177,8 +177,8 @@ class Position:
         self.current_price = close_price
         self.realized_pnl = realized_pnl
         self.unrealized_pnl = Decimal('0')
-        self.closed_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.closed_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
     
     def is_open(self) -> bool:
         """Check if position is open."""
@@ -201,7 +201,7 @@ class Position:
         if price is None:
             price = self.current_price
         
-        return self.size * price
+        return self.size * price  # type: ignore[operator]
     
     def holding_time(self) -> float:
         """
@@ -213,7 +213,7 @@ class Position:
         if self.closed_at:
             end_time = self.closed_at
         else:
-            end_time = datetime.utcnow()
+            end_time = datetime.now(timezone.utc)
         
         delta = end_time - self.opened_at
         return delta.total_seconds()

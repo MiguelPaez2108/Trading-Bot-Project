@@ -6,7 +6,7 @@ Path: src/python/domain/entities/trade.py
 from dataclasses import dataclass, field
 from typing import Optional
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from src.python.domain.value_objects.symbol import TradingPair
@@ -41,7 +41,7 @@ class Trade:
     realized_pnl: Optional[Decimal] = None
     
     # Timestamp
-    executed_at: datetime = field(default_factory=datetime.utcnow)
+    executed_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     def __post_init__(self):
         """Validate trade on creation."""
@@ -54,12 +54,12 @@ class Trade:
         if self.size is None or self.size <= 0:
             raise ValueError("Size must be positive")
         
-        # Ensure Decimal types only for non-Decimal inputs
-        if self.price is not None and not isinstance(self.price, Decimal):
+        # Ensure Decimal types only for non-Decimal inputs (runtime safety)
+        if self.price is not None and not isinstance(self.price, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'price', Decimal(str(self.price)))
-        if self.size is not None and not isinstance(self.size, Decimal):
+        if self.size is not None and not isinstance(self.size, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'size', Decimal(str(self.size)))
-        if self.commission is not None and not isinstance(self.commission, Decimal):
+        if self.commission is not None and not isinstance(self.commission, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'commission', Decimal(str(self.commission)))
     
     def notional_value(self) -> Decimal:
@@ -69,7 +69,8 @@ class Trade:
         Returns:
             Notional value in quote currency
         """
-        return self.size * self.price
+        # Type checker: size and price are validated as non-None in __post_init__
+        return self.size * self.price  # type: ignore[operator]
     
     def net_value(self) -> Decimal:
         """

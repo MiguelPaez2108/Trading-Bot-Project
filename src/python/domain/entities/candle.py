@@ -36,16 +36,16 @@ class Candle:
     
     def __post_init__(self):
         """Validate OHLC relationships."""
-        # Ensure Decimal types only for non-Decimal inputs
-        if not isinstance(self.open, Decimal):
+        # Ensure Decimal types only for non-Decimal inputs (runtime safety)
+        if not isinstance(self.open, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'open', Decimal(str(self.open)))
-        if not isinstance(self.high, Decimal):
+        if not isinstance(self.high, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'high', Decimal(str(self.high)))
-        if not isinstance(self.low, Decimal):
+        if not isinstance(self.low, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'low', Decimal(str(self.low)))
-        if not isinstance(self.close, Decimal):
+        if not isinstance(self.close, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'close', Decimal(str(self.close)))
-        if not isinstance(self.volume, Decimal):
+        if not isinstance(self.volume, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'volume', Decimal(str(self.volume)))
         
         # Validate OHLC relationships

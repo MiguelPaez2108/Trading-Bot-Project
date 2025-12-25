@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from src.python.domain.value_objects.symbol import TradingPair
@@ -71,8 +71,8 @@ class Order:
     average_fill_price: Optional[Decimal] = None
     
     # Metadata
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     filled_at: Optional[datetime] = None
     
     def __post_init__(self):
@@ -86,14 +86,14 @@ class Order:
         if self.size is None or self.size <= 0:
             raise ValueError("Size must be positive")
         
-        # Ensure Decimal types only for non-Decimal inputs
-        if self.size is not None and not isinstance(self.size, Decimal):
+        # Ensure Decimal types only for non-Decimal inputs (runtime safety)
+        if self.size is not None and not isinstance(self.size, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'size', Decimal(str(self.size)))
-        if self.price is not None and not isinstance(self.price, Decimal):
+        if self.price is not None and not isinstance(self.price, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'price', Decimal(str(self.price)))
-        if self.stop_loss is not None and not isinstance(self.stop_loss, Decimal):
+        if self.stop_loss is not None and not isinstance(self.stop_loss, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'stop_loss', Decimal(str(self.stop_loss)))
-        if self.take_profit is not None and not isinstance(self.take_profit, Decimal):
+        if self.take_profit is not None and not isinstance(self.take_profit, Decimal):  # type: ignore[misc]
             object.__setattr__(self, 'take_profit', Decimal(str(self.take_profit)))
     
     @classmethod
@@ -156,10 +156,10 @@ class Order:
             new_status: New status
         """
         self.status = new_status
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
         
         if new_status == OrderStatus.FILLED:
-            self.filled_at = datetime.utcnow()
+            self.filled_at = datetime.now(timezone.utc)
     
     def update_fill(
         self,
@@ -182,7 +182,7 @@ class Order:
             self.filled_size += filled_size
             self.average_fill_price = total_value / self.filled_size
         
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
         
         # Update status
         if self.filled_size >= self.size:
